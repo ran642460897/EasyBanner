@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EasyBanner">
+        <attr name="indicatorDivider" format="dimension"/>
+        <attr name="indicator" format="reference"/>
+        <attr name="indicatorLayoutGravity" format="integer">
+            <flag name="start" value="0x00800003" />
+            <flag name="end" value="0x00800005" />
+            <flag name="top" value="0x30" />
+            <flag name="bottom" value="0x50" />
+            <flag name="center_horizontal" value="0x01" />
+            <flag name="center_vertical" value="0x10" />
+        </attr>
+        <attr name="indicatorLayoutMarginTop" format="dimension"/>
+        <attr name="indicatorLayoutMarginBottom" format="dimension"/>
+        <attr name="indicatorLayoutMarginStart" format="dimension"/>
+        <attr name="indicatorLayoutMarginEnd" format="dimension"/>
+        <attr name="interval" format="integer"/>
+    </declare-styleable>
+</resources>
