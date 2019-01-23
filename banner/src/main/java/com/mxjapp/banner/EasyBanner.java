@@ -64,7 +64,7 @@ public class EasyBanner extends FrameLayout{
     public void init(){
         if(adapter==null) throw new NullPointerException();
         initView();
-        if(adapter.data.size()>1) startHandler();
+        if(adapter.getSize()>1) startHandler();
     }
     private void initView(){
         initViewPager();
@@ -72,15 +72,12 @@ public class EasyBanner extends FrameLayout{
     }
     private void initViewPager(){
         List<View> views=new ArrayList<>();
-        if(adapter.data!=null&&adapter.data.size()>0){
-            for (int i=0;i<adapter.data.size();i++){
-                views.add(generateImageView(i));
-            }
+        if(adapter!=null){
+            for (int i=0;i<adapter.getSize();i++) views.add(generateImageView(i));
 
-            if(adapter.data.size()==2||adapter.data.size()==3){//when the size is 2 or 3,add more
-                for(int i=0;i<adapter.data.size();i++){
-                    views.add(generateImageView(i));
-                }
+
+            if(adapter.getSize()==2||adapter.getSize()==3){//when the size is 2 or 3,add more
+                for(int i=0;i<adapter.getSize();i++) views.add(generateImageView(i));
             }
         }
         viewPager=new CustomViewPager(getContext());
@@ -119,8 +116,8 @@ public class EasyBanner extends FrameLayout{
         indicators = new ArrayList<>();
         RadioGroup indicatorContainer = new RadioGroup(getContext());
         indicatorContainer.setOrientation(LinearLayout.HORIZONTAL);
-        if(adapter.data!=null&&adapter.data.size()>0) {
-            for(int i=0;i<adapter.data.size();i++) {
+        if(adapter!=null) {
+            for(int i=0;i<adapter.getSize();i++) {
                 RadioButton radioButton = new RadioButton(getContext());
                 radioButton.setButtonDrawable(indicatorRes);
                 LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -130,6 +127,8 @@ public class EasyBanner extends FrameLayout{
 
                 if(initialPosition==i) radioButton.setChecked(true);
             }
+
+            if(adapter.getSize()==1) indicatorContainer.removeAllViews();//when only one page
         }
         LayoutParams params=new LayoutParams(LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.gravity= indicatorLayoutGravity;
@@ -143,11 +142,11 @@ public class EasyBanner extends FrameLayout{
         imageView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(adapter!=null) adapter.onItemClick(v,adapter.data.get(position));
+                if(adapter!=null) adapter.onItemClick(v,adapter.getItem(position));
             }
         });
 
-        if(adapter!=null) adapter.onImageLoad(imageView,adapter.data.get(position));
+        if(adapter!=null) adapter.onImageLoad(imageView,adapter.getItem(position));
         return imageView;
     }
     private void startHandler(){

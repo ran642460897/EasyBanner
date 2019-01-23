@@ -22,4 +22,10 @@ public abstract class BannerAdapter<T> {
     }
     public abstract void onImageLoad(ImageView imageView,T object);
     public abstract void onItemClick(View imageView, T object);
+    public T getItem(int position){
+        return data!=null&&data.size()>position?data.get(position):null;
+    }
+    public int getSize(){
+        return data!=null?data.size():0;
+    }
 }
