@@ -3,10 +3,12 @@ package com.mxjapp.banner;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +27,9 @@ import java.util.List;
  * date: 2019/1/22.
  */
 public class EasyBanner extends FrameLayout{
+    public final static int MESSAGE_UPDATE=1000;
     private CustomViewPager viewPager;
+    private RadioGroup indicatorContainer;
     private List<RadioButton> indicators;
     private int indicatorRes;
     private int indicatorLayoutGravity;
@@ -32,8 +37,10 @@ public class EasyBanner extends FrameLayout{
     private int indicatorDivider;
     private int initialPosition=0;
     private int interval;
-    private BannerAdapter adapter; 
+    private BannerAdapter adapter;
+    private ViewPagerAdapter viewPagerAdapter;
 
+    private UpdateHandler updateHandler;
     private Handler picHandler;
     private Runnable picRunnable;
     private boolean handlerLooping=false;
@@ -48,6 +55,8 @@ public class EasyBanner extends FrameLayout{
     public EasyBanner(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initAttrs(attrs);
+        initUpdateHandler();
+        initView();
     }
     private void initAttrs(AttributeSet attrs){
         TypedArray typedArray = getContext().obtainStyledAttributes(attrs, R.styleable.EasyBanner);
@@ -61,29 +70,14 @@ public class EasyBanner extends FrameLayout{
         indicatorLayoutMargins[3]=typedArray.getDimensionPixelSize(R.styleable.EasyBanner_indicatorLayoutMarginBottom,0);
         typedArray.recycle();
     }
-    public void init(){
-        if(adapter==null) throw new NullPointerException();
-        initView();
-        if(adapter.getSize()>1) startHandler();
+    private void initUpdateHandler(){
+        updateHandler=new UpdateHandler(this);
     }
     private void initView(){
-        initViewPager();
-        initIndicatorView();
-    }
-    private void initViewPager(){
-        List<View> views=new ArrayList<>();
-        if(adapter!=null){
-            for (int i=0;i<adapter.getSize();i++) views.add(generateImageView(i));
-
-
-            if(adapter.getSize()==2||adapter.getSize()==3){//when the size is 2 or 3,add more
-                for(int i=0;i<adapter.getSize();i++) views.add(generateImageView(i));
-            }
-        }
+        //view pager
         viewPager=new CustomViewPager(getContext());
-        ViewPagerAdapter viewPagerAdapter=new ViewPagerAdapter(views);
+        viewPagerAdapter=new ViewPagerAdapter();
         viewPager.setAdapter(viewPagerAdapter);
-        viewPager.setScrollable(views.size()>1);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int i, float v, int i1) {
@@ -99,23 +93,64 @@ public class EasyBanner extends FrameLayout{
             public void onPageScrollStateChanged(int i) {
                 switch (i){
                     case 1://start moving
-                        stopHandler();
+                        stopLooping();
                         break;
                     case 2://end moving
-                        startHandler();
+                        startLooping();
                         break;
                 }
             }
         });
-        if(adapter.data!=null) {
-            viewPager.setCurrentItem(1000*adapter.data.size()+initialPosition,false);
-        }
         addView(viewPager,LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT);
+
+        //indicator
+        indicatorContainer = new RadioGroup(getContext());
+        LayoutParams params=new LayoutParams(LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity= indicatorLayoutGravity;
+        params.setMargins(indicatorLayoutMargins[0],indicatorLayoutMargins[1],indicatorLayoutMargins[2],indicatorLayoutMargins[3]);
+        addView(indicatorContainer,params);
     }
-    private void initIndicatorView(){
+    @SuppressWarnings("unchecked")
+    private void updateViewPager(){
+        if(adapter==null) return;
+        int preViewSize=viewPagerAdapter.getViews().size();
+        int curViewSize=adapter.getSize()==2||adapter.getSize()==3?adapter.getSize()*2:adapter.getSize();
+
+        if(preViewSize>0){
+            int relPosition=curViewSize>1?viewPager.getCurrentItem()%curViewSize:viewPager.getCurrentItem()%preViewSize;
+            for(int i=relPosition;i>0;i--){
+                viewPager.setCurrentItem(viewPager.getCurrentItem()-1,false);
+            }
+        }
+
+        if(curViewSize>preViewSize) {
+            for (int i = 0; i < curViewSize - preViewSize; i++) {
+                ImageView imageView = new ImageView(getContext());
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                viewPagerAdapter.addItem(imageView);
+            }
+        }else if(curViewSize<preViewSize){
+            for(int i=preViewSize-1;i>curViewSize-1;i--) viewPagerAdapter.removeItem(i);
+        }
+
+        for(int j=0;j<viewPagerAdapter.getRealSize();j++){
+            final int position=j%adapter.getSize();
+            adapter.onImageLoad(viewPagerAdapter.getItem(j),adapter.getItem(position));
+            viewPagerAdapter.getItem(j).setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    adapter.onItemClick(v,adapter.getItem(position));
+                }
+            });
+        }
+        viewPagerAdapter.notifyDataSetChanged();
+        viewPager.setScrollable(adapter.getSize()>1);
+        if(viewPager.getCurrentItem()==0&&preViewSize==0&&curViewSize>1) viewPager.setCurrentItem(100*viewPagerAdapter.getRealSize()+initialPosition,false);
+    }
+    private void updateIndicatorView(){
         indicators = new ArrayList<>();
-        RadioGroup indicatorContainer = new RadioGroup(getContext());
         indicatorContainer.setOrientation(LinearLayout.HORIZONTAL);
+        if(indicatorContainer.getChildCount()>0) indicatorContainer.removeAllViews();
         if(adapter!=null) {
             for(int i=0;i<adapter.getSize();i++) {
                 RadioButton radioButton = new RadioButton(getContext());
@@ -130,26 +165,9 @@ public class EasyBanner extends FrameLayout{
 
             if(adapter.getSize()==1) indicatorContainer.removeAllViews();//when only one page
         }
-        LayoutParams params=new LayoutParams(LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.gravity= indicatorLayoutGravity;
-        params.setMargins(indicatorLayoutMargins[0],indicatorLayoutMargins[1],indicatorLayoutMargins[2],indicatorLayoutMargins[3]);
-        addView(indicatorContainer,params);
     }
-    @SuppressWarnings("unchecked")
-    private ImageView generateImageView(final int position){
-        ImageView imageView=new ImageView(getContext());
-        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        imageView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(adapter!=null) adapter.onItemClick(v,adapter.getItem(position));
-            }
-        });
 
-        if(adapter!=null) adapter.onImageLoad(imageView,adapter.getItem(position));
-        return imageView;
-    }
-    private void startHandler(){
+    private void startLooping(){
         if(picHandler==null) picHandler=new Handler();
         if(picRunnable==null) picRunnable=new Runnable() {
             @Override
@@ -163,25 +181,48 @@ public class EasyBanner extends FrameLayout{
             handlerLooping=true;
         }
     }
-    private void stopHandler(){
+    private void stopLooping(){
         if(picHandler!=null&&picRunnable!=null){
             handlerLooping=false;
             picHandler.removeCallbacks(picRunnable);
         }
     }
     public void restart(){
-        startHandler();
+        startLooping();
     }
     public void stop(){
-        stopHandler();
+        startLooping();
+    }
+    protected void update(){
+        Log.i("sssssssssssss","update");
+        stopLooping();
+        if(adapter==null) return;
+        if(adapter.getHandler()==null) adapter.bindHandler(updateHandler);
+        updateViewPager();
+        updateIndicatorView();
+        if(adapter.getSize()>1) startLooping();
+        setVisibility(adapter.getSize()==0?GONE:VISIBLE);
     }
 
-    public EasyBanner setAdapter(BannerAdapter adapter) {
+    public void setAdapter(BannerAdapter adapter) {
         this.adapter = adapter;
-        return this;
+        update();
     }
 
     public void setInterval(int interval) {
         this.interval = interval;
+    }
+
+    static class UpdateHandler extends Handler{
+        private WeakReference<EasyBanner> reference;
+        UpdateHandler(EasyBanner view){
+            reference=new WeakReference<>(view);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if(msg.what==MESSAGE_UPDATE) reference.get().update();
+        }
     }
 }

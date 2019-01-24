@@ -2,10 +2,13 @@ package com.mxjapp.banner;
 
 import android.support.annotation.NonNull;
 import android.support.v4.view.PagerAdapter;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -14,21 +17,19 @@ import java.util.List;
  */
 
 public class ViewPagerAdapter extends PagerAdapter {
-    private List<View> views;
-    private int updatePagePosition=-1;
+    private List<ImageView> views;
 
     public ViewPagerAdapter() {
+        views=new ArrayList<>();
     }
 
-    public ViewPagerAdapter(List<View> views) {
+    public ViewPagerAdapter(List<ImageView> views) {
         this.views = views;
     }
 
     @Override
     public int getCount() {
-        if(views==null) return 0;
-        else if(views.size()<=1) return views.size();
-        else return Integer.MAX_VALUE;
+        return views.size()>1?Integer.MAX_VALUE:views.size();
     }
 
     @Override
@@ -44,28 +45,33 @@ public class ViewPagerAdapter extends PagerAdapter {
         }catch (Exception e){
             e.printStackTrace();
         }
-        return views.get(position%views.size());
+        return views.get((position)%views.size());
     }
 
     @Override
     public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
-         if(views.size()>3)container.removeView(views.get(position%views.size()));
+        if(views.size()==0) return;
+        container.removeView(views.get((position)%views.size()));
     }
     @Override
     public int getItemPosition(@NonNull Object object) {
-        if(updatePagePosition>0&&updatePagePosition<views.size()){
-            if(object==views.get(updatePagePosition)) return POSITION_NONE;
-            else return POSITION_UNCHANGED;
-        }else return POSITION_NONE;
-
-    }
-    public void updateData(List<View> views) {
-        updatePagePosition=-1;
-        this.views = views;
-        notifyDataSetChanged();
+        return POSITION_NONE;
     }
 
-    public void setUpdatePagePosition(int updatePagePosition) {
-        this.updatePagePosition = updatePagePosition;
+
+    public List<ImageView> getViews() {
+        return views;
+    }
+    public void addItem(ImageView imageView){
+        views.add(imageView);
+    }
+    public void removeItem(int position){
+        if(position>=0&&position<views.size()) views.remove(position);
+    }
+    public int getRealSize(){
+        return views.size();
+    }
+    public ImageView getItem(int position){
+        return position>=0&&position<views.size()? views.get(position):null;
     }
 }

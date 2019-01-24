@@ -5,12 +5,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
     <com.mxjapp.banner.EasyBanner
         android:id="@+id/banner"
         android:layout_width="match_parent"
         android:layout_height="200dp"
         app:indicatorLayoutMarginBottom="30dp"
-        app:indicatorDivider="10dp" />
+        app:indicatorDivider="10dp"
+        app:interval="20000"
+        app:indicator="@drawable/selector_ic_arrow"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="更换图片"
+        android:id="@+id/button"
+        android:gravity="center"
+        android:paddingBottom="16dp"/>
+    </LinearLayout>
 
 </android.support.design.widget.CoordinatorLayout>
