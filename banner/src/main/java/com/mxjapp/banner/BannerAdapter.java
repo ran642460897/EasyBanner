@@ -39,6 +39,10 @@ public abstract class BannerAdapter<T> {
         return data!=null?data.size():0;
     }
 
+    public List<T> getData() {
+        return data;
+    }
+
     public void notifyDataSetChanged(){
         if(handler!=null) {
             new Thread(new Runnable() {
