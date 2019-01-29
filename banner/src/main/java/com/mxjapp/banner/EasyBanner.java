@@ -191,7 +191,7 @@ public class EasyBanner extends FrameLayout{
         startLooping();
     }
     public void stop(){
-        startLooping();
+        stopLooping();
     }
     protected void update(){
         Log.i("sssssssssssss","update");

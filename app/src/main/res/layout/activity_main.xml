@@ -15,7 +15,7 @@
         android:layout_height="200dp"
         app:indicatorLayoutMarginBottom="30dp"
         app:indicatorDivider="10dp"
-        app:interval="20000"
+        app:interval="3000"
         app:indicator="@drawable/selector_ic_arrow"/>
     <Button
         android:layout_width="match_parent"
